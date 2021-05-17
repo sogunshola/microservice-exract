@@ -19,7 +19,7 @@ async function bootstrap() {
     },
   );
   app.useGlobalFilters(new RpcValidationFilter());
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.listen(() => console.log('cards Service is listening'));
 }
 bootstrap();

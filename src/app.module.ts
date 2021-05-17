@@ -1,9 +1,14 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CardsModule } from './cards/cards.module';
+import { typeOrmConfig } from './config/typeorm.config';
+import { AxiosModule } from './axios/axios.module';
+import { CardPaymentsModule } from './card-payments/card-payments.module';
 
 @Module({
-  imports: [],
+  imports: [TypeOrmModule.forRoot(typeOrmConfig), CardsModule, AxiosModule, CardPaymentsModule],
   controllers: [AppController],
   providers: [AppService],
 })
