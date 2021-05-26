@@ -11,7 +11,7 @@ async function bootstrap() {
       transport: Transport.RMQ,
       options: {
         urls: [process.env.RMQ_URL],
-        queue: process.env.PAYOUT_REQUEST_RMQ_QUEUE,
+        queue: process.env.CARD_RMQ_QUEUE,
         queueOptions: {
           durable: false,
         },

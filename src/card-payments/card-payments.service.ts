@@ -1,6 +1,6 @@
 import { CreateCardDto } from './../cards/dto/create-card.dto';
 import { AxiosService } from './../axios/axios.service';
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
   CreateCardPaymentDto,
   ValidateCardDto,
@@ -9,7 +9,7 @@ import {
 import { UpdateCardPaymentDto } from './dto/update-card-payment.dto';
 import * as forge from 'node-forge';
 import { CardsService } from '../cards/cards.service';
-import axios from 'axios';
+import { stringify } from 'node:querystring';
 
 process
   .on('unhandledRejection', (reason, p) => {
@@ -22,6 +22,13 @@ process
     console.error('the error is ', err);
     process.exit(1);
   });
+
+/* 
+  PAYMENT REQUEST FLOW
+- customer updates payment method
+- authenticate their payment method (next -action)
+- complete the payment request
+  */
 
 @Injectable()
 export class CardPaymentsService {
@@ -81,10 +88,15 @@ export class CardPaymentsService {
       const response = await this.axiosService
         .Request()
         .post('/charges?type=card', { client });
-      console.log({ response: response.data });
-      return response.data;
+      console.log({ response: response.data.meta });
+      response.data.completed = false;
+      const nextAction = this.generateNextAction('intiate', response.data.meta);
+      return { ...response.data, nextAction };
     } catch (error) {
       this.logger.error({ error });
+      throw new BadRequestException(
+        'Failed, Error while connecting to third party',
+      );
     }
   }
 
@@ -112,7 +124,7 @@ export class CardPaymentsService {
       tx_ref: `${email}/${Date.now()}`,
       type: 'card',
       authorization,
-      // redirect_url: 'https://webhook.site/3ed41e38-2c79-4c79-b455-97398730866c',
+      redirect_url: 'https://webhook.site/3ed41e38-2c79-4c79-b455-97398730866c',
     };
 
     let client = this.encrypt(
@@ -127,7 +139,7 @@ export class CardPaymentsService {
       const response = await this.axiosService
         .Request()
         .post('/charges?type=card', { client });
-      console.log({ response: response.data });
+      console.log({ response: response.data.meta });
 
       const dataObj = response.data;
       let createCard: CreateCardDto = {
@@ -147,10 +159,13 @@ export class CardPaymentsService {
       if (!doesExist) {
         await this.cardsService.create(createCard);
       }
-
-      return dataObj;
+      dataObj.completed = false;
+      const nextAction = this.generateNextAction('authorize', dataObj.meta);
+      return { ...dataObj, nextAction };
     } catch (error) {
       this.logger.error({ error });
+      this.logger.error({ error });
+      throw new BadRequestException('Failed, Error while authorizing card');
     }
   }
 
@@ -183,9 +198,12 @@ export class CardPaymentsService {
         ...cardDetail,
         token: verify.data.card.token,
       });
+      dataObj.completed = true;
       return dataObj;
     } catch (error) {
       this.logger.error({ error });
+      this.logger.error({ error });
+      throw new BadRequestException('Failed, Error while validating payment');
     }
   }
 
@@ -199,6 +217,8 @@ export class CardPaymentsService {
       return dataObj;
     } catch (error) {
       this.logger.error({ error });
+      this.logger.error({ error });
+      throw new BadRequestException('Failed, Error while verifying payment');
     }
   }
 
@@ -209,6 +229,7 @@ export class CardPaymentsService {
         .post('/tokenized-charges', payload);
       console.log({ response: response.data });
       const dataObj = response.data;
+      dataObj.completed = true;
       return dataObj;
     } catch (error) {
       this.logger.error({ error });
@@ -225,5 +246,57 @@ export class CardPaymentsService {
     cipher.finish();
     var encrypted = cipher.output;
     return forge.util.encode64(encrypted.getBytes());
+  }
+
+  private generateNextAction(
+    type: 'intiate' | 'authorize' | 'validate',
+    meta: any,
+  ) {
+    if (type == 'intiate') {
+      const obj = {};
+
+      if (meta.authorization.fields) {
+        for (const key of meta.authorization.fields) {
+          obj[key] = 'string';
+        }
+      }
+      return {
+        mode: 'authorizeCard',
+        payload: {
+          createCardPayment: <CreateCardPaymentDto>{
+            amount: 'string',
+            cardNumber: 'string',
+            currency: 'string',
+            cvv: 'string',
+            email: 'string',
+            expiryMonth: 'string',
+            expiryYear: 'string',
+            fullName: 'string',
+            authorization: {
+              mode: meta.authorization.mode,
+              ...obj,
+            },
+          },
+        },
+      };
+    } else if (type == 'authorize') {
+      return {
+        mode: 'authorizeCard',
+        payload: {
+          validateCard: <ValidateCardDto>{
+            cardNumber: 'string',
+            flwRef: 'string',
+            otp: 'string',
+            // authorization: {
+            //   mode: meta.authorization.mode,
+            //   ...(meta.authorization.fields.reduce(
+            //     (o, key) => Object.assign(o, { [key]: 'string' }),
+            //     {},
+            //   ) ?? null),
+            // },
+          },
+        },
+      };
+    }
   }
 }
