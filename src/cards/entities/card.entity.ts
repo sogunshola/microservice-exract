@@ -34,6 +34,6 @@ export class Card extends AbstractEntity {
   @Column({ nullable: true })
   token: string;
 
-  @OneToMany((type) => Charge, (charge) => charge.card, { eager: true })
+  @OneToMany(() => Charge, (charge) => charge.card)
   charges: Charge[];
 }

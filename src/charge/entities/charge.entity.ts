@@ -28,6 +28,6 @@ export class Charge extends AbstractEntity {
   @Column()
   cardId: string;
 
-  @ManyToOne((type) => Card, (card) => card.charges)
+  @ManyToOne(() => Card, (card) => card.charges)
   card: Card;
 }

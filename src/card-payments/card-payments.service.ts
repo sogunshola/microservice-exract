@@ -214,13 +214,13 @@ export class CardPaymentsService {
         processorResponse: verifyResponse.processor_response,
         txRef: verifyResponse.tx_ref,
       };
+      console.log({ chargePayload });
 
       await this.saveCharge(chargePayload);
 
       dataObj.completed = true;
       return dataObj;
     } catch (error) {
-      this.logger.error({ error });
       this.logger.error({ error });
       throw new BadRequestException('Failed, Error while validating payment');
     }
