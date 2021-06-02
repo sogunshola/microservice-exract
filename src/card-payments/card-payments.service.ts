@@ -1,3 +1,4 @@
+import { CreateChargeDto } from './../charge/dto/create-charge.dto';
 import { CreateCardDto } from './../cards/dto/create-card.dto';
 import { AxiosService } from './../axios/axios.service';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
@@ -10,6 +11,7 @@ import { UpdateCardPaymentDto } from './dto/update-card-payment.dto';
 import * as forge from 'node-forge';
 import { CardsService } from '../cards/cards.service';
 import { stringify } from 'node:querystring';
+import { ChargeService } from '../charge/charge.service';
 
 process
   .on('unhandledRejection', (reason, p) => {
@@ -35,6 +37,7 @@ export class CardPaymentsService {
   constructor(
     private readonly axiosService: AxiosService,
     private readonly cardsService: CardsService,
+    private readonly chargeService: ChargeService,
   ) {}
   private readonly logger = new Logger(CardPaymentsService.name);
   async initiate(createCardPaymentDto: CreateCardPaymentDto) {
@@ -189,6 +192,7 @@ export class CardPaymentsService {
 
       /// Verify if payment was successful
       const verify = await this.verifyPayment(dataObj.data.id);
+      const verifyResponse = verify.data;
 
       /// Save token for card to perform tokenized payments on next try
       let cardDetail: any = await this.cardsService.findByCardNumber(
@@ -196,8 +200,23 @@ export class CardPaymentsService {
       );
       await this.cardsService.update(cardDetail.id, {
         ...cardDetail,
-        token: verify.data.card.token,
+        token: verifyResponse.card.token,
       });
+
+      /// Save charge
+      const chargePayload: CreateChargeDto = {
+        accountId: verifyResponse.account_id,
+        amount: verifyResponse.amount,
+        cardId: cardDetail.id,
+        chargedAmount: verifyResponse.charged_amount,
+        currency: verifyResponse.currency,
+        flwRef: verifyResponse.flw_ref,
+        processorResponse: verifyResponse.processor_response,
+        txRef: verifyResponse.tx_ref,
+      };
+
+      await this.saveCharge(chargePayload);
+
       dataObj.completed = true;
       return dataObj;
     } catch (error) {
@@ -298,5 +317,9 @@ export class CardPaymentsService {
         },
       };
     }
+  }
+
+  private saveCharge(payload: CreateChargeDto) {
+    this.chargeService.create(payload);
   }
 }

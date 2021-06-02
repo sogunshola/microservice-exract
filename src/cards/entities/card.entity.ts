@@ -1,4 +1,5 @@
-import { Column, Entity } from 'typeorm';
+import { Charge } from './../../charge/entities/charge.entity';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { AbstractEntity } from '../../shared/abstract-entity';
 
 @Entity('cards')
@@ -32,4 +33,7 @@ export class Card extends AbstractEntity {
 
   @Column({ nullable: true })
   token: string;
+
+  @OneToMany((type) => Charge, (charge) => charge.card, { eager: true })
+  charges: PaymentRequest[];
 }
