@@ -35,5 +35,5 @@ export class Card extends AbstractEntity {
   token: string;
 
   @OneToMany((type) => Charge, (charge) => charge.card, { eager: true })
-  charges: PaymentRequest[];
+  charges: Charge[];
 }
