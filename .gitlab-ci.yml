@@ -1,0 +1,82 @@
+image: docker:latest
+services:
+  - docker:dind
+
+stages:
+  - build
+  - deploy
+
+variables:
+  CONTAINER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+build:
+  stage: build
+  only:
+    - staging
+    - master
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t ${CONTAINER_IMAGE} .
+    - docker tag ${CONTAINER_IMAGE} ${CONTAINER_IMAGE}
+    - docker tag ${CONTAINER_IMAGE} $CI_REGISTRY_IMAGE:latest
+    - docker push ${CONTAINER_IMAGE}
+
+deploy_to_staging:
+  stage: deploy
+  only:
+    - staging
+  image: ubuntu:18.04
+  script:
+    - cd ~
+    - apt-get update
+    - apt-get install build-essential wget git curl -y
+    - wget https://github.com/digitalocean/doctl/releases/download/v1.46.0/doctl-1.46.0-linux-amd64.tar.gz
+    - tar xf ~/doctl-1.46.0-linux-amd64.tar.gz
+    - mv ~/doctl /usr/local/bin
+    - doctl auth init --access-token ${DIGITALOCEAN_ACCESS_TOKEN}
+    - doctl kubernetes cluster kubeconfig save ${KUBE_CLUSTER_ID}
+    - wget https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz && tar xvf helm-v3.4.1-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin && rm helm-v3.4.1-linux-amd64.tar.gz && rm -rf linux-amd64
+    - helm plugin install https://github.com/jkroepke/helm-secrets --version v3.7.0
+    - wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz
+    - tar -xvf ~/go1.16.4.linux-amd64.tar.gz
+    - mv ~/go /usr/local
+    - export GOROOT=/usr/local/go
+    - export GOPATH=$HOME/go
+    - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+    - go get -u go.mozilla.org/sops/v3/cmd/sops
+    - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+    - az login --service-principal --username ${AZ_SERVICE_PRINCIPAL_APP_ID} --password ${AZ_SERVICE_PRINCIPAL_PASSWORD} --tenant ${AZ_SERVICE_PRINCIPAL_TENANT}
+    - az account set --subscription ${AZ_AKS_SUBSCRIPTION}
+    - export HELM_EXPERIMENTAL_OCI=1
+    - helm registry login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - helm chart pull ${BACKEND_HELM_CHART_REGISTRY}:${BACKEND_HELM_CHART_IMAGE_TAG}
+    - helm chart export ${BACKEND_HELM_CHART_REGISTRY}:${BACKEND_HELM_CHART_IMAGE_TAG} /joovlin/
+    - helm secrets upgrade -i joovlin-${CI_PROJECT_TITLE} ~/joovlin -n ${CI_PROJECT_TITLE} --create-namespace -f ~/joovlin/secrets.downstream.staging.yaml -f ~/joovlin/secrets.shared.yaml --set ${CI_PROJECT_TITLE}.image.repository=${CI_REGISTRY_IMAGE} --set ${CI_PROJECT_TITLE}.image.tag=${CI_COMMIT_SHA} --set ${CI_PROJECT_TITLE}.enabled=true
+
+deploy_to_production:
+  stage: deploy
+  only:
+    - master
+  image: ubuntu:18.04
+  script:
+    - cd ~
+    - apt-get update
+    - apt-get install build-essential wget git curl -y
+    - wget https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz && tar xvf helm-v3.4.1-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin && rm helm-v3.4.1-linux-amd64.tar.gz && rm -rf linux-amd64
+    - helm plugin install https://github.com/jkroepke/helm-secrets --version v3.7.0
+    - wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz
+    - tar -xvf ~/go1.16.4.linux-amd64.tar.gz
+    - mv ~/go /usr/local
+    - export GOROOT=/usr/local/go
+    - export GOPATH=$HOME/go
+    - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+    - go get -u go.mozilla.org/sops/v3/cmd/sops
+    - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+    - az login --service-principal --username ${AZ_SERVICE_PRINCIPAL_APP_ID} --password ${AZ_SERVICE_PRINCIPAL_PASSWORD} --tenant ${AZ_SERVICE_PRINCIPAL_TENANT}
+    - az account set --subscription ${AZ_AKS_SUBSCRIPTION}
+    - az aks get-credentials --resource-group ${AZ_AKS_RESOURCE_GROUP} --name ${AZ_AKS_CLUSTER_NAME}
+    - export HELM_EXPERIMENTAL_OCI=1
+    - helm registry login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - helm chart pull ${BACKEND_HELM_CHART_REGISTRY}:${BACKEND_HELM_CHART_IMAGE_TAG}
+    - helm chart export ${BACKEND_HELM_CHART_REGISTRY}:${BACKEND_HELM_CHART_IMAGE_TAG} /joovlin/
+    - helm secrets upgrade -i joovlin-${CI_PROJECT_TITLE} ~/joovlin -n ${CI_PROJECT_TITLE} --create-namespace -f ~/joovlin/secrets.downstream.production.yaml -f ~/joovlin/secrets.shared.yaml --set ${CI_PROJECT_TITLE}.image.repository=${CI_REGISTRY_IMAGE} --set ${CI_PROJECT_TITLE}.image.tag=${CI_COMMIT_SHA} --set ${CI_PROJECT_TITLE}.enabled=true
