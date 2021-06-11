@@ -10,7 +10,7 @@ import {
 import { UpdateCardPaymentDto } from './dto/update-card-payment.dto';
 import * as forge from 'node-forge';
 import { CardsService } from '../cards/cards.service';
-import { stringify } from 'node:querystring';
+// import { stringify } from 'node:querystring';
 import { ChargeService } from '../charge/charge.service';
 
 process
