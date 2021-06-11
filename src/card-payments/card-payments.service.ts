@@ -90,7 +90,7 @@ export class CardPaymentsService {
     try {
       const response = await this.axiosService
         .Request()
-        .post('/charges?type=card', { client });
+        .post(process.env.CHARGE_URI, { client });
       console.log({ response: response.data.meta });
       response.data.completed = false;
       const nextAction = this.generateNextAction('intiate', response.data.meta);
@@ -141,7 +141,7 @@ export class CardPaymentsService {
     try {
       const response = await this.axiosService
         .Request()
-        .post('/charges?type=card', { client });
+        .post(process.env.CHARGE_URI, { client });
       console.log({ response: response.data.meta });
 
       const dataObj = response.data;
@@ -186,7 +186,7 @@ export class CardPaymentsService {
     try {
       const response = await this.axiosService
         .Request()
-        .post('/validate-charge', payload);
+        .post(process.env.VALIDATE_CHARGE_URI, payload);
       console.log({ response: response.data });
       const dataObj = response.data;
 
@@ -245,7 +245,7 @@ export class CardPaymentsService {
     try {
       const response = await this.axiosService
         .Request()
-        .post('/tokenized-charges', payload);
+        .post(process.env.TOKENIZED_CHARGE_URI, payload);
       console.log({ response: response.data });
       const dataObj = response.data;
       dataObj.completed = true;
