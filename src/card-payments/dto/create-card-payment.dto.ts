@@ -13,7 +13,7 @@ export class CreateCardPaymentDto {
 }
 
 export class ValidateCardDto {
-  @IsNotEmpty() @MinLength(6) otp: string;
+  @IsNotEmpty() otp: string;
   @IsNotEmpty() flwRef: string;
   @IsNotEmpty() cardNumber: string;
 }

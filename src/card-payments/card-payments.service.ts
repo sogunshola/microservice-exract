@@ -52,19 +52,19 @@ export class CardPaymentsService {
       fullName,
     } = createCardPaymentDto;
 
-    let doesExist: any = await this.cardsService.findByCardNumber(cardNumber);
+    // let doesExist: any = await this.cardsService.findByCardNumber(cardNumber);
 
-    if (doesExist && doesExist.token != null) {
-      let tokenPayload: TokenizedDto = {
-        amount,
-        country: 'NG',
-        currency,
-        email,
-        token: doesExist.token,
-        tx_ref: `${email}/${Date.now()}`,
-      };
-      return await this.tokenizedCard(tokenPayload);
-    }
+    // if (doesExist && doesExist.token != null) {
+    //   let tokenPayload: TokenizedDto = {
+    //     amount,
+    //     country: 'NG',
+    //     currency,
+    //     email,
+    //     token: doesExist.token,
+    //     tx_ref: `${email}/${Date.now()}`,
+    //   };
+    //   return await this.tokenizedCard(tokenPayload);
+    // }
     let payload = {
       card_number: cardNumber,
       cvv,
@@ -115,7 +115,7 @@ export class CardPaymentsService {
       fullName,
       authorization,
     } = createCardPaymentDto;
-    let payload = {
+    const payload = {
       card_number: cardNumber,
       cvv,
       expiry_month: expiryMonth,
@@ -130,7 +130,7 @@ export class CardPaymentsService {
       redirect_url: 'https://webhook.site/3ed41e38-2c79-4c79-b455-97398730866c',
     };
 
-    let client = this.encrypt(
+    const client = this.encrypt(
       process.env.FLUTTERWAVE_ENCRYPTION_KEY,
       JSON.stringify(payload),
     );
@@ -145,7 +145,7 @@ export class CardPaymentsService {
       console.log({ response: response.data.meta });
 
       const dataObj = response.data;
-      let createCard: CreateCardDto = {
+      const createCard: CreateCardDto = {
         cardNumber,
         cardType: dataObj.data.card.type,
         currency: dataObj.data.currency,
@@ -158,7 +158,7 @@ export class CardPaymentsService {
       };
 
       ///Store card data to DB if it does not already exist
-      let doesExist = await this.cardsService.findByCardNumber(cardNumber);
+      const doesExist = await this.cardsService.findByCardNumber(cardNumber);
       if (!doesExist) {
         await this.cardsService.create(createCard);
       }
@@ -175,7 +175,7 @@ export class CardPaymentsService {
   async validate(validateDto: ValidateCardDto) {
     const { flwRef, otp, cardNumber } = validateDto;
 
-    let payload = {
+    const payload = {
       otp,
       flw_ref: flwRef,
       type: 'card',
@@ -195,7 +195,7 @@ export class CardPaymentsService {
       const verifyResponse = verify.data;
 
       /// Save token for card to perform tokenized payments on next try
-      let cardDetail: any = await this.cardsService.findByCardNumber(
+      const cardDetail: any = await this.cardsService.findByCardNumber(
         cardNumber,
       );
       await this.cardsService.update(cardDetail.id, {
