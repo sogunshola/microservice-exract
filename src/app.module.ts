@@ -9,7 +9,13 @@ import { CardPaymentsModule } from './card-payments/card-payments.module';
 import { ChargeModule } from './charge/charge.module';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(typeOrmConfig), CardsModule, AxiosModule, CardPaymentsModule, ChargeModule],
+  imports: [
+    TypeOrmModule.forRoot(typeOrmConfig),
+    CardsModule,
+    AxiosModule,
+    CardPaymentsModule,
+    ChargeModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

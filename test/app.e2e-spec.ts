@@ -76,49 +76,49 @@ describe('AppController (e2e)', () => {
       fullName: 'SHalom ogunshola',
     };
 
-    // const validatePayload: ValidateCardDto = {
-    //   cardNumber: '5531886652142950',
-    //   flwRef: 'FLW-MOCK-53eb71680267bd0e7b78d8972287b411',
-    //   otp: '123456',
-    // };
-    // it('Should initate payment', async (done) => {
-    //   const resPayload = await client
-    //     .send(
-    //       { cmd: 'initiateCardPayment' },
-    //       {
-    //         ...payload,
-    //       },
-    //     )
-    //     .toPromise();
-
-    //   // console.log('resPayload', resPayload);
-    //   expect(resPayload.object).toBe('initiatePayment');
-    //   done();
-    // });
-
-    it('Should authorize card and store card data', async (done) => {
+    const validatePayload: ValidateCardDto = {
+      cardNumber: '5531886652142950',
+      flwRef: 'FLW-MOCK-53eb71680267bd0e7b78d8972287b411',
+      otp: '123456',
+    };
+    it('Should initate payment', async (done) => {
       const resPayload = await client
         .send(
-          { cmd: 'authorizeCardPayment' },
+          { cmd: 'initiateCardPayment' },
           {
             ...payload,
-            authorization: {
-              mode: 'avs_noauth',
-              // pin: '3310',
-              city: 'San Francisco',
-              address: '333 Fremont Street, San Francisco, CA',
-              state: 'California',
-              country: 'US',
-              zipcode: '94105',
-            },
           },
         )
         .toPromise();
 
       // console.log('resPayload', resPayload);
-      expect(resPayload.object).toBe('authorizePayment');
+      expect(resPayload.object).toBe('initiatePayment');
       done();
     });
+
+    // it('Should authorize card and store card data', async (done) => {
+    //   const resPayload = await client
+    //     .send(
+    //       { cmd: 'authorizeCardPayment' },
+    //       {
+    //         ...payload,
+    //         authorization: {
+    //           mode: 'avs_noauth',
+    //           // pin: '3310',
+    //           city: 'San Francisco',
+    //           address: '333 Fremont Street, San Francisco, CA',
+    //           state: 'California',
+    //           country: 'US',
+    //           zipcode: '94105',
+    //         },
+    //       },
+    //     )
+    //     .toPromise();
+
+    //   // console.log('resPayload', resPayload);
+    //   expect(resPayload.object).toBe('authorizePayment');
+    //   done();
+    // });
 
     // it('Should authorize card and store card data', async (done) => {
     //   const resPayload = await client

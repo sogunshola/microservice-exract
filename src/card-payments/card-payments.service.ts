@@ -12,18 +12,19 @@ import * as forge from 'node-forge';
 import { CardsService } from '../cards/cards.service';
 // import { stringify } from 'node:querystring';
 import { ChargeService } from '../charge/charge.service';
+import * as fs from 'fs';
 
-process
-  .on('unhandledRejection', (reason, p) => {
-    // console.error(reason, 'Unhandled Rejection at Promise', p);
+// process
+//   .on('unhandledRejection', (reason, p) => {
+//     // console.error(reason, 'Unhandled Rejection at Promise', p);
 
-    console.error('the reason is', reason, p);
-  })
-  .on('uncaughtException', (err) => {
-    // console.error(err, 'Uncaught Exception thrown');
-    console.error('the error is ', err);
-    process.exit(1);
-  });
+//     console.error('the reason is', reason, p);
+//   })
+//   .on('uncaughtException', (err) => {
+//     // console.error(err, 'Uncaught Exception thrown');
+//     console.error('the error is ', err);
+//     // process.exit(1);
+//   });
 
 /* 
   PAYMENT REQUEST FLOW
@@ -71,7 +72,7 @@ export class CardPaymentsService {
       expiry_month: expiryMonth,
       expiry_year: expiryYear,
       currency,
-      amount,
+      amount: parseInt(amount) / 100,
       email,
       fullname: fullName,
       tx_ref: `${email}/${Date.now()}`,
@@ -89,14 +90,17 @@ export class CardPaymentsService {
 
     try {
       const response = await this.axiosService
-        .Request()
-        .post(process.env.CHARGE_URI, { client });
+        .ProxyRequest()
+        .post(process.env.CHARGE_URI, payload);
       console.log({ response: response.data.meta });
       response.data.completed = false;
       const nextAction = this.generateNextAction('intiate', response.data.meta);
       return { ...response.data, nextAction };
     } catch (error) {
-      this.logger.error({ error });
+      this.logger.error({ error: error.response.data });
+      if (error.response) {
+        throw error;
+      }
       throw new BadRequestException(
         'Failed, Error while connecting to third party',
       );
@@ -121,7 +125,7 @@ export class CardPaymentsService {
       expiry_month: expiryMonth,
       expiry_year: expiryYear,
       currency,
-      amount,
+      amount: parseInt(amount) / 100,
       email,
       fullname: fullName,
       tx_ref: `${email}/${Date.now()}`,
@@ -135,15 +139,18 @@ export class CardPaymentsService {
       JSON.stringify(payload),
     );
 
-    this.logger.debug(payload);
-    this.logger.debug({ client });
+    // this.logger.debug(payload);
+    // this.logger.debug({ client });
+
+    // return 'YEs';
 
     try {
       const response = await this.axiosService
-        .Request()
-        .post(process.env.CHARGE_URI, { client });
-      console.log({ response: response.data.meta });
+        .ProxyRequest()
+        .post(process.env.CHARGE_URI, payload);
 
+      // return response.data;
+      console.log({ response: response.data.meta });
       const dataObj = response.data;
       const createCard: CreateCardDto = {
         cardNumber,
@@ -156,7 +163,6 @@ export class CardPaymentsService {
         expiryYear,
         name: fullName,
       };
-
       ///Store card data to DB if it does not already exist
       const doesExist = await this.cardsService.findByCardNumber(cardNumber);
       if (!doesExist) {
@@ -165,9 +171,12 @@ export class CardPaymentsService {
       dataObj.completed = false;
       const nextAction = this.generateNextAction('authorize', dataObj.meta);
       return { ...dataObj, nextAction };
+      return {};
     } catch (error) {
       this.logger.error({ error });
-      this.logger.error({ error });
+      if (error.response) {
+        throw error;
+      }
       throw new BadRequestException('Failed, Error while authorizing card');
     }
   }
@@ -216,12 +225,15 @@ export class CardPaymentsService {
       };
       console.log({ chargePayload });
 
-      await this.saveCharge(chargePayload);
+      this.saveCharge(chargePayload);
 
       dataObj.completed = true;
       return dataObj;
     } catch (error) {
       this.logger.error({ error });
+      if (error.response) {
+        throw error;
+      }
       throw new BadRequestException('Failed, Error while validating payment');
     }
   }
@@ -236,7 +248,9 @@ export class CardPaymentsService {
       return dataObj;
     } catch (error) {
       this.logger.error({ error });
-      this.logger.error({ error });
+      if (error.response) {
+        throw error;
+      }
       throw new BadRequestException('Failed, Error while verifying payment');
     }
   }
@@ -252,6 +266,9 @@ export class CardPaymentsService {
       return dataObj;
     } catch (error) {
       this.logger.error({ error });
+      if (error.response) {
+        throw error;
+      }
     }
   }
 
