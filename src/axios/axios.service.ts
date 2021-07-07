@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import * as HttpsProxyAgent from 'https-proxy-agent';
-import * as url from 'url';
 import * as fs from 'fs';
 
 @Injectable()
@@ -16,9 +15,9 @@ export class AxiosService {
   }
 
   public ProxyRequest() {
-    const urlParams = url.parse(
-      `https://${process.env.VGS_USERNAME}:${process.env.VGS_PASSWORD}@${process.env.VGS_OUTBOUND_URL}`,
-    );
+    // const urlParams = url.parse(
+    //   `https://${process.env.VGS_USERNAME}:${process.env.VGS_PASSWORD}@${process.env.VGS_OUTBOUND_URL}`,
+    // );
     const agent = HttpsProxyAgent({
       host: process.env.VGS_HOST,
       port: process.env.VGS_PORT,

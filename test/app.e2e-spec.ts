@@ -66,14 +66,14 @@ describe('AppController (e2e)', () => {
 
   describe('Card Payment', () => {
     const payload: CreateCardPaymentDto = {
-      amount: '3000',
-      cardNumber: '4556052704172643',
+      amount: '1000',
+      cardNumber: '5531886652142950',
       currency: 'NGN',
-      cvv: '899',
-      email: 'test@mail.com',
+      cvv: '828',
+      email: 'shalomogunshola@gmail.com',
       expiryMonth: '09',
       expiryYear: '32',
-      fullName: 'SHalom ogunshola',
+      fullName: 'Shalom ogunshola',
     };
 
     const validatePayload: ValidateCardDto = {

@@ -13,25 +13,9 @@ import { CardsService } from '../cards/cards.service';
 // import { stringify } from 'node:querystring';
 import { ChargeService } from '../charge/charge.service';
 import * as fs from 'fs';
-
-// process
-//   .on('unhandledRejection', (reason, p) => {
-//     // console.error(reason, 'Unhandled Rejection at Promise', p);
-
-//     console.error('the reason is', reason, p);
-//   })
-//   .on('uncaughtException', (err) => {
-//     // console.error(err, 'Uncaught Exception thrown');
-//     console.error('the error is ', err);
-//     // process.exit(1);
-//   });
-
-/* 
-  PAYMENT REQUEST FLOW
-- customer updates payment method
-- authenticate their payment method (next -action)
-- complete the payment request
-  */
+import { CreateRedirectLinkDto } from '../redirect-links/dto/create-redirect-link.dto';
+import { RedirectLinksService } from '../redirect-links/redirect-links.service';
+import { RedirectLink } from '../redirect-links/entities/redirect-link.entity';
 
 @Injectable()
 export class CardPaymentsService {
@@ -39,6 +23,7 @@ export class CardPaymentsService {
     private readonly axiosService: AxiosService,
     private readonly cardsService: CardsService,
     private readonly chargeService: ChargeService,
+    private readonly redirectService: RedirectLinksService,
   ) {}
   private readonly logger = new Logger(CardPaymentsService.name);
   async initiate(createCardPaymentDto: CreateCardPaymentDto) {
@@ -77,28 +62,33 @@ export class CardPaymentsService {
       fullname: fullName,
       tx_ref: `${email}/${Date.now()}`,
       type: 'card',
-      // redirect_url: 'https://webhook.site/3ed41e38-2c79-4c79-b455-97398730866c',
+      redirect_url:
+        'https://staging.checkout.joovlin.com/cs_Wsa295s3hw4hFoMszcSpQZ/pk_live_YTI2NzQ4MzctMzQxYS00Y2Y4LWIxNGYtY2U5NmNiNWNjMTll',
     };
 
-    let client = this.encrypt(
+    /* let client = this.encrypt(
       process.env.FLUTTERWAVE_ENCRYPTION_KEY,
       JSON.stringify(payload),
-    );
+    ); */
 
     this.logger.debug(payload);
-    this.logger.debug({ client });
 
     try {
       const response = await this.axiosService
         .ProxyRequest()
         .post(process.env.CHARGE_URI, payload);
-      console.log({ response: response.data.meta });
+      console.log({ response: response.data });
       response.data.completed = false;
-      const nextAction = this.generateNextAction('intiate', response.data.meta);
+      const nextAction = await this.generateNextAction(
+        'intiate',
+        response.data.meta,
+      );
       return { ...response.data, nextAction };
     } catch (error) {
-      this.logger.error({ error: error.response.data });
+      this.logger.error({ error });
       if (error.response) {
+        this.logger.error({ error: error.response.data });
+
         throw error;
       }
       throw new BadRequestException(
@@ -169,9 +159,11 @@ export class CardPaymentsService {
         await this.cardsService.create(createCard);
       }
       dataObj.completed = false;
-      const nextAction = this.generateNextAction('authorize', dataObj.meta);
+      const nextAction = await this.generateNextAction(
+        'authorize',
+        dataObj.meta,
+      );
       return { ...dataObj, nextAction };
-      return {};
     } catch (error) {
       this.logger.error({ error });
       if (error.response) {
@@ -284,7 +276,7 @@ export class CardPaymentsService {
     return forge.util.encode64(encrypted.getBytes());
   }
 
-  private generateNextAction(
+  private async generateNextAction(
     type: 'intiate' | 'authorize' | 'validate',
     meta: any,
   ) {
@@ -295,11 +287,20 @@ export class CardPaymentsService {
         for (const key of meta.authorization.fields) {
           obj[key] = 'string';
         }
+      } else {
+        if (meta.authorization.redirect) {
+          const linkPayload: CreateRedirectLinkDto = {
+            link: meta.authorization.redirect,
+          };
+          const redirectObject: RedirectLink =
+            await this.redirectService.create(linkPayload);
+          obj['redirect'] = redirectObject.id;
+        }
       }
       return {
         mode: 'authorizeCard',
         payload: {
-          createCardPayment: <CreateCardPaymentDto>{
+          charge: <CreateCardPaymentDto>{
             amount: 'string',
             cardNumber: 'string',
             currency: 'string',

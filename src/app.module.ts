@@ -7,6 +7,7 @@ import { typeOrmConfig } from './config/typeorm.config';
 import { AxiosModule } from './axios/axios.module';
 import { CardPaymentsModule } from './card-payments/card-payments.module';
 import { ChargeModule } from './charge/charge.module';
+import { RedirectLinksModule } from './redirect-links/redirect-links.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ChargeModule } from './charge/charge.module';
     AxiosModule,
     CardPaymentsModule,
     ChargeModule,
+    RedirectLinksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
