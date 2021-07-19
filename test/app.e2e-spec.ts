@@ -8,6 +8,7 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { ClientProxy, ClientsModule, Transport } from '@nestjs/microservices';
 import { getConnection } from 'typeorm';
+import { RMQ_URL, CARD_RMQ_QUEUE } from '../src/config';
 
 jest.setTimeout(100000);
 
@@ -24,8 +25,8 @@ describe('AppController (e2e)', () => {
             name: 'clientToken',
             transport: Transport.RMQ,
             options: {
-              urls: [process.env.RMQ_URL],
-              queue: process.env.PAYOUT_REQUEST_RMQ_QUEUE,
+              urls: [RMQ_URL],
+              queue: CARD_RMQ_QUEUE,
               queueOptions: {
                 durable: false,
               },
@@ -39,8 +40,8 @@ describe('AppController (e2e)', () => {
     app.connectMicroservice({
       transport: Transport.RMQ,
       options: {
-        urls: [process.env.RMQ_URL],
-        queue: process.env.PAYOUT_REQUEST_RMQ_QUEUE,
+        urls: [RMQ_URL],
+        queue: CARD_RMQ_QUEUE,
         queueOptions: {
           durable: false,
         },

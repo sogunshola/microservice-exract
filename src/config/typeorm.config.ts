@@ -1,25 +1,31 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
+import {
+  TYPEORM_CONNECTION_STRING,
+  TYPEORM_ENTITIES,
+  TYPEORM_SSL,
+  TYPEORM_SYNCHRONIZE,
+} from '.';
 
 dotenv.config();
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',
-  url: process.env.TYPEORM_CONNECTION_STRING,
-  // host: process.env.TYPEORM_HOST,
-  // port: Number(process.env.TYPEORM_PORT),
-  // username: process.env.TYPEORM_USERNAME,
-  // password: process.env.TYPEORM_PASSWORD,
-  // database: process.env.TYPEORM_DATABASE,
-  entities: [process.env.TYPEORM_ENTITIES],
+  url: TYPEORM_CONNECTION_STRING,
+  // host: TYPEORM_HOST,
+  // port: Number(TYPEORM_PORT),
+  // username: TYPEORM_USERNAME,
+  // password: TYPEORM_PASSWORD,
+  // database: TYPEORM_DATABASE,
+  entities: [TYPEORM_ENTITIES],
   // entities: [
-  //   // process.env.TYPERORM_ENTITIES,
+  //   // TYPERORM_ENTITIES,
   //   __dirname + '/../**/*.entity.{js,ts}',
   // ],
   autoLoadEntities: true,
   extra: {
-    ssl: parseInt(process.env.TYPEORM_SSL),
+    ssl: TYPEORM_SSL,
   },
-  synchronize: process.env.TYPEORM_SYNCHRONIZE == 'true' ? true : false,
+  synchronize: TYPEORM_SYNCHRONIZE,
   logging: false,
 };

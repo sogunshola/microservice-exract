@@ -16,6 +16,12 @@ import * as fs from 'fs';
 import { CreateRedirectLinkDto } from '../redirect-links/dto/create-redirect-link.dto';
 import { RedirectLinksService } from '../redirect-links/redirect-links.service';
 import { RedirectLink } from '../redirect-links/entities/redirect-link.entity';
+import {
+  CHARGE_URI,
+  FLUTTERWAVE_ENCRYPTION_KEY,
+  VALIDATE_CHARGE_URI,
+  TOKENIZED_CHARGE_URI,
+} from '../config';
 
 @Injectable()
 export class CardPaymentsService {
@@ -67,7 +73,7 @@ export class CardPaymentsService {
     };
 
     /* let client = this.encrypt(
-      process.env.FLUTTERWAVE_ENCRYPTION_KEY,
+      FLUTTERWAVE_ENCRYPTION_KEY,
       JSON.stringify(payload),
     ); */
 
@@ -76,7 +82,7 @@ export class CardPaymentsService {
     try {
       const response = await this.axiosService
         .ProxyRequest()
-        .post(process.env.CHARGE_URI, payload);
+        .post(CHARGE_URI, payload);
       console.log({ response: response.data });
       response.data.completed = false;
       const nextAction = await this.generateNextAction(
@@ -125,7 +131,7 @@ export class CardPaymentsService {
     };
 
     const client = this.encrypt(
-      process.env.FLUTTERWAVE_ENCRYPTION_KEY,
+      FLUTTERWAVE_ENCRYPTION_KEY,
       JSON.stringify(payload),
     );
 
@@ -137,7 +143,7 @@ export class CardPaymentsService {
     try {
       const response = await this.axiosService
         .ProxyRequest()
-        .post(process.env.CHARGE_URI, payload);
+        .post(CHARGE_URI, payload);
 
       // return response.data;
       console.log({ response: response.data.meta });
@@ -187,7 +193,7 @@ export class CardPaymentsService {
     try {
       const response = await this.axiosService
         .Request()
-        .post(process.env.VALIDATE_CHARGE_URI, payload);
+        .post(VALIDATE_CHARGE_URI, payload);
       console.log({ response: response.data });
       const dataObj = response.data;
 
@@ -251,7 +257,7 @@ export class CardPaymentsService {
     try {
       const response = await this.axiosService
         .Request()
-        .post(process.env.TOKENIZED_CHARGE_URI, payload);
+        .post(TOKENIZED_CHARGE_URI, payload);
       console.log({ response: response.data });
       const dataObj = response.data;
       dataObj.completed = true;
@@ -289,12 +295,12 @@ export class CardPaymentsService {
         }
       } else {
         if (meta.authorization.redirect) {
-          const linkPayload: CreateRedirectLinkDto = {
-            link: meta.authorization.redirect,
-          };
-          const redirectObject: RedirectLink =
-            await this.redirectService.create(linkPayload);
-          obj['redirect'] = redirectObject.id;
+          // const linkPayload: CreateRedirectLinkDto = {
+          //   link: meta.authorization.redirect,
+          // };
+          // const redirectObject: RedirectLink =
+          //   await this.redirectService.create(linkPayload);
+          obj['redirect'] = meta.authorization.redirect;
         }
       }
       return {

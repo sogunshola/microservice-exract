@@ -2,6 +2,15 @@ import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fs from 'fs';
+import {
+  BASE_URL,
+  VGS_HOST,
+  VGS_PORT,
+  VGS_USERNAME,
+  VGS_PASSWORD,
+  FLUTTERWAVE_SECRET_KEY,
+  FLUTTERWAVE_ENCRYPTION_KEY,
+} from '../config';
 
 @Injectable()
 export class AxiosService {
@@ -9,23 +18,23 @@ export class AxiosService {
 
   public Request() {
     return axios.create({
-      baseURL: process.env.BASE_URL,
+      baseURL: BASE_URL,
       headers: this.setHeaderAuthorization(),
     });
   }
 
   public ProxyRequest() {
     // const urlParams = url.parse(
-    //   `https://${process.env.VGS_USERNAME}:${process.env.VGS_PASSWORD}@${process.env.VGS_OUTBOUND_URL}`,
+    //   `https://${VGS_USERNAME}:${VGS_PASSWORD}@${VGS_OUTBOUND_URL}`,
     // );
     const agent = HttpsProxyAgent({
-      host: process.env.VGS_HOST,
-      port: process.env.VGS_PORT,
-      auth: `${process.env.VGS_USERNAME}:${process.env.VGS_PASSWORD}`,
+      host: VGS_HOST,
+      port: VGS_PORT,
+      auth: `${VGS_USERNAME}:${VGS_PASSWORD}`,
       ca: [fs.readFileSync(__dirname + '/../../resources/cert.pem')],
     });
     return axios.create({
-      baseURL: process.env.BASE_URL,
+      baseURL: BASE_URL,
       headers: this.setHeaderAuthorization(),
       httpsAgent: agent,
     });
@@ -33,7 +42,7 @@ export class AxiosService {
 
   public NoTokenRequest() {
     return axios.create({
-      baseURL: process.env.BASE_URL,
+      baseURL: BASE_URL,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -42,9 +51,9 @@ export class AxiosService {
 
   private setHeaderAuthorization() {
     return {
-      Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+      Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
       'Content-Type': 'application/json',
-      'X-Private-Key': `${process.env.FLUTTERWAVE_ENCRYPTION_KEY}`,
+      'X-Private-Key': `${FLUTTERWAVE_ENCRYPTION_KEY}`,
       Accept: 'application/json',
     };
   }

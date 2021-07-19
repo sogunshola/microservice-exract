@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
+import { RMQ_URL, CARD_RMQ_QUEUE } from './config';
 import { RpcValidationFilter } from './shared/filter.exception';
 
 async function bootstrap() {
@@ -10,8 +11,8 @@ async function bootstrap() {
     {
       transport: Transport.RMQ,
       options: {
-        urls: [process.env.RMQ_URL],
-        queue: process.env.CARD_RMQ_QUEUE,
+        urls: [RMQ_URL],
+        queue: CARD_RMQ_QUEUE,
         queueOptions: {
           durable: false,
         },
