@@ -18,10 +18,6 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   // password: TYPEORM_PASSWORD,
   // database: TYPEORM_DATABASE,
   entities: [TYPEORM_ENTITIES],
-  // entities: [
-  //   // TYPERORM_ENTITIES,
-  //   __dirname + '/../**/*.entity.{js,ts}',
-  // ],
   autoLoadEntities: true,
   extra: {
     ssl: TYPEORM_SSL,
